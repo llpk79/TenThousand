@@ -241,14 +241,14 @@ Enter = roll K = keep''',
 
 def take_turns(self, player_list):
     '''Sets winning score, switches between players'''
-    while not any(player.total_score >= 1000 for player
+    while not any(player.total_score >= 10000 for player
                   in player_list):
         for player in player_list:
             turn(player)
             for x in range(0, len(player_list)):
                 print(f'\n{player_list[x].name}\'s total score is: '
                       f'{player_list[x].total_score}')
-        if any(player.total_score >= 1000 for player in player_list):
+        if any(player.total_score >= 10000 for player in player_list):
             winner_dict = {}
             for x in range(len(player_list)):
                 winner_dict.update({player_list[x].total_score: player_list[x]})
