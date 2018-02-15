@@ -2,13 +2,43 @@ import random
 import collections
 import numpy as np
 
-valuedict = {1: {
+msg = ('''
+                    Welcome to Ten Thousand
+                           The Game!
+Objective:
+    Score 10,000 points.
+    Any turn in which a player ends with more than 10,000 points will be the 
+    final turn.
+    If multiple players finish with more than 10,000 points, the winner is the
+    player with the most points.
+    
+To score:
+    1's and 5's are worth 100 and 50 points respectively.
+    Three-of-a-kind is worth the die number x 100. (Three 1's is 1000 points)
+    Four-of-a-kind is worth double the same Three-of-a-kind.
+    Five-of-a-kind is double Four-of-a-kind.
+    Six of any number is worth 5000 points.
+    A six dice straight is worth 1500 points.
+    Three pairs are also worth 1500 points.
+    
+To play:
+    Your dice will appear in [brackets].
+    Choose your dice by the reference number located above your dice.
+    You must score 500 points to get on the board.
+    You'll press Enter a lot. Sorry about that. There will be graphics soon.
+    Try and break things! If you do, please tell my how you did it.
+    Screen shots of the error message are especially helpful.
+    Have fun and thanks for helping me develop my first app!!
+''')
+
+valuedict = {1:
+                {
                 0: 0,
                 1: 100,
                 2: 200,
                 3: 1000,
                 4: 2000,
-                5: 0,
+                5: 4000,
                 6: 5000
                 },
             2: {
@@ -17,7 +47,7 @@ valuedict = {1: {
                 2: 0,
                 3: 200,
                 4: 400,
-                5: 0,
+                5: 800,
                 6: 5000
                 },
             3: {
@@ -26,7 +56,7 @@ valuedict = {1: {
                 2: 0,
                 3: 300,
                 4: 600,
-                5: 0,
+                5: 1200,
                 6: 5000
                 },
             4: {
@@ -35,7 +65,7 @@ valuedict = {1: {
                 2: 0,
                 3: 400,
                 4: 800,
-                5: 0,
+                5: 1600,
                 6: 5000
                 },
             5: {
@@ -44,7 +74,7 @@ valuedict = {1: {
                 2: 100,
                 3: 500,
                 4: 1000,
-                5: 0,
+                5: 2000,
                 6: 5000
                 },
             6: {
@@ -53,43 +83,10 @@ valuedict = {1: {
                 2: 0,
                 3: 600,
                 4: 1200,
-                5: 0,
+                5: 2400,
                 6: 5000
                 }
                 }
-
-
-def is_full_house(choice):
-    if len(choice) == 6 and\
-                all(a == b for a, b in zip(*[iter(sorted(choice))]*2)):
-        return 1500
-    else:
-        return 0
-
-
-def is_straight(choice):
-    if sorted(choice) == list(range(1, 7)):
-        return 1500
-    else:
-        return 0
-
-
-def keep_score(choice):
-    '''Scores choices from Player.pick().'''
-    score = 0
-    score += is_straight(choice)
-    score += is_full_house(choice)
-    if score == 0:
-        counts = collections.Counter(choice)
-        try:
-            score = sum(valuedict[die][count] for die, count
-                        in counts.items())
-        except KeyError:
-            pass
-    if score == 0:
-        print('\nNo keepers. What a bummer.\nYour score for this round is: 0')
-        return 0
-    return score
 
 
 class Game:
@@ -106,13 +103,11 @@ class Game:
             player_list.append(self.name)
         x = 0
         while x < players:
-            name = input('Enter your name:''\n', )
-            self.name = name
+            name = input(f'Player {x + 1}, Enter your name:''\n', )
             self.name = Player(name)
             player_list.append(self.name)
             x += 1
         return player_list
-
 
 
 class Player:
@@ -125,20 +120,30 @@ class Player:
         choice_list = []
         try:
             while True:
-                choose = int(input('''
-Choose which die to keep by position 1-6
-Type choice, then enter, repeat for all choices.
+                choose = int(input(
+'''Choose which die to keep by position 1-6
+Type position number, then enter. Repeat for all choices.
 Press enter when finished
-''',
+'''
                             ))-1
                 if choose >= len(roll):
-                    print('\nChoice not available\nGo ahead and try again.')
-                    pass
+                    print(f'\n{choose} not available\n')
+                    continue
+                if choose in choice_list:
+                    print('\nYou can only pick a die once.\nNo cheating!')
+                    continue
                 else:
                     choice_list.append(choose)
         except ValueError:
             choice = [roll[x] for x in choice_list]
             False
+        if choice is not None:
+            counts = collections.Counter(choice)
+            for _ in counts.items():
+                if valuedict[_[0]][_[1]] == 0 and is_full_house(choice) == 0 \
+                        and is_straight(choice) == 0:
+                    print(f'\n{_[0]} is not a keeper.\nNo cheating!')
+                    choice = None
         if choice is None:
             choice = []
         return choice
@@ -153,7 +158,8 @@ class ComPlayer:
         '''Allows computer to choose dice. Boop beep.'''
         counts = collections.Counter(roll)
         keepers = np.zeros(6, dtype=int)
-        if is_full_house(roll) == 1500:
+        if is_full_house(roll) > sum(valuedict[die][count] for die, count
+                    in counts.items()):
             keepers = list(roll)
         elif is_straight(roll) == 1500:
             keepers = list(roll)
@@ -176,98 +182,112 @@ class ComPlayer:
             return []
         return choice
 
-def throw(throw_list):
+def is_full_house(choice):
+    if choice is None:
+        return 0
+    else:
+        if len(choice) == 6 and\
+                    all(a == b for a, b in zip(*[iter(sorted(choice))]*2)):
+            return 1500
+        else:
+            return 0
+
+def is_straight(choice):
+    if choice is None:
+        return 0
+    else:
+        if sorted(choice) == list(range(1, 7)):
+            return 1500
+        else:
+            return 0
+
+def keep_score(choice):
+    '''Scores choices from self.pick().'''
+    score = 0
+    counts = collections.Counter(choice)
+    score = sum(valuedict[die][count] for die, count in counts.items())
+    straight = is_straight(choice)
+    full_house = is_full_house(choice)
+    if score < straight or full_house:
+        score = max(straight, full_house)
+    if score == 0:
+        print('\nNo keepers. What a bummer.\nYour score for this round is: 0')
+        return 0
+    return score
+
+def throw(keepers_list):
     '''Rolls dice and returns rolls in a list.'''
-    roll = [random.randint(1, 6) for _ in range(6-len(throw_list))]
+    roll = [random.randint(1, 6) for _ in range(6-len(keepers_list))]
     return roll
 
 def turn(player):
     '''One player turn.'''
     round_score = 0
     keepers_list = []
-    throw_list = []
     throw_count = 0
     while True:
         roll = throw(keepers_list)
         print(f'\n{player.name}, your dice in []\n 1  2  3  4  5  6\n{roll}\n')
-        throw_list.append(roll)
-        choice = player.pick(throw_list[throw_count])
+        choice = player.pick(roll)
         print(f'\nHere are your choices: {choice}')
         score = keep_score(choice)
         if score == 0:
-            False
-            return round_score
+            return False
         print(f'\nScore for this throw is: {score}')
         round_score += score
         print(f'\nTotal score for this turn is: {round_score}')
         keepers_list += choice
-        if len(keepers_list) ==6:
+        if len(keepers_list) == 6:
             print('\nSix keepers! Roll \'em again!')
             keepers_list = []
-            throw_list = []
             throw_count = -1
         if player.name != 'Digital Overlord':
-            again = (input(
-'''Roll again or keep?
-Enter = roll K = keep''',
-                    ))
+            again = input('''
+Roll again or keep?
+Enter = roll K = keep'''
+                    )
             if again == r'k':
                 player.total_score += round_score
                 if player.total_score < 500:
-                    print('\nMust score 500 to get on the board.')
-                    False
+                    print('\nMust score at least 500 to get on the board.')
                     player.total_score = 0
                     round_score = 0
-                    return round_score
+                    return False
                 else:
                     print(f'\n{player.name}\'s score this turn: {round_score}')
-                    False
-                    return round_score
+                    return False
             else:
                 throw_count += 1
         else:
-            if round_score >= 500 and len(keepers_list) is not 6:
+            if round_score >= 500 and len(keepers_list) > 2:
                 player.total_score += round_score
-                if player.total_score > 500:
-                    print(f'\nYour score this turn: {round_score}')
-                    False
-                    return round_score
-                else:
-                    player.total_score = 0
+                print(f'\n{player.name}\'s score this turn: {round_score}')
+                return False
             else:
                 throw_count += 1
-    False
-    return round_score
+    return False
 
-def take_turns(self, player_list):
+def take_turns(player_list):
     '''Sets winning score, switches between players'''
-    while not any(player.total_score >= 10000 for player
-                  in player_list):
+    winner_dict = {}
+    while not any(player.total_score >= 10000 for player in player_list):
         for player in player_list:
             turn(player)
-            for x in range(0, len(player_list)):
+            for x in range(len(player_list)):
                 print(f'\n{player_list[x].name}\'s total score is: '
                       f'{player_list[x].total_score}')
-        if any(player.total_score >= 10000 for player in player_list):
-            winner_dict = {}
-            for x in range(len(player_list)):
-                winner_dict.update({player_list[x].total_score: player_list[x]})
-            winner = winner_dict[max(winner_dict.keys())]
-
-        False
-    print(f'\nThe winner is {winner.name},'
+    for x in range(len(player_list)):
+        winner_dict.update({player_list[x].total_score: player_list[x]})
+    winner = winner_dict[max(winner_dict.keys())]
+    False
+    print(f'\nThe winner is {winner.name}, '
           f'with a score of: {winner.total_score}!!')
     return False
 
 def main():
-    while True:
-        player_list = Game.set_player(Game, [])
-        take_turns(Game, player_list)
-        replay = input('Would you like to play again? y/n')
-        if replay == r'y':
-            True
-        else:
-            False
-# print(msg)
+    player_list = Game.set_player(Game, [])
+    take_turns(player_list)
+
+print(msg)
 if __name__=="__main__":
     main()
