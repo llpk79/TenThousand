@@ -137,14 +137,14 @@ Press enter when finished
         except ValueError:
             choice = [roll[x] for x in choice_list]
             False
-        if choice is not None:
+        if choice != None:
             counts = collections.Counter(choice)
             for _ in counts.items():
-                if valuedict[_[0]][_[1]] == 0 and is_full_house(choice) == 0 \
-                        and is_straight(choice) == 0:
+                if valuedict[_[0]][_[1]] == 0 and not is_full_house(choice)\
+                        and not is_straight(choice):
                     print(f'\n{_[0]} is not a keeper.\nNo cheating!')
-                    choice = None
-        if choice is None:
+                    choice = []
+        else:
             choice = []
         return choice
 
@@ -158,10 +158,10 @@ class ComPlayer:
         '''Allows computer to choose dice. Boop beep.'''
         counts = collections.Counter(roll)
         keepers = np.zeros(6, dtype=int)
-        if is_full_house(roll) > sum(valuedict[die][count] for die, count
-                    in counts.items()):
+        if is_full_house(roll) and sum(valuedict[die][count] for die, count
+                    in counts.items()) < 1500:
             keepers = list(roll)
-        elif is_straight(roll) == 1500:
+        elif is_straight(roll):
             keepers = list(roll)
         else:
             for _ in counts.items():
@@ -183,33 +183,21 @@ class ComPlayer:
         return choice
 
 def is_full_house(choice):
-    if choice is None:
-        return 0
-    else:
-        if len(choice) == 6 and\
-                    all(a == b for a, b in zip(*[iter(sorted(choice))]*2)):
-            return 1500
-        else:
-            return 0
+    return len(choice) == 6 and\
+                all(a == b for a, b in zip(*[iter(sorted(choice))]*2))
 
 def is_straight(choice):
-    if choice is None:
-        return 0
-    else:
-        if sorted(choice) == list(range(1, 7)):
-            return 1500
-        else:
-            return 0
+    return sorted(choice) == list(range(1, 7))
+
 
 def keep_score(choice):
     '''Scores choices from self.pick().'''
     score = 0
     counts = collections.Counter(choice)
     score = sum(valuedict[die][count] for die, count in counts.items())
-    straight = is_straight(choice)
-    full_house = is_full_house(choice)
-    if score < straight or full_house:
-        score = max(straight, full_house)
+    if score < 1500:
+         if is_straight(choice) or is_full_house(choice):
+            score += 1500
     if score == 0:
         print('\nNo keepers. What a bummer.\nYour score for this round is: 0')
         return 0
