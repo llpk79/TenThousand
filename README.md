@@ -3,7 +3,7 @@ A dice game for multiple players
 
 Text based dice game you can play with your friends and, if you wish, the feindishly good Digital Overloard.
 
-Scoring and game rules are outlined thouroughly in the game. The basics are:
+Scoring and game rules are outlined thoroughly in the game. The basics are:
 - Roll dice and keep at least one die per roll to keep your turn going.
 - You are allowed to keep 1's and 5's, along with a few special combinations.
   - Any three or more of a kind in one throw.
